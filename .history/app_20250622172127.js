@@ -64,36 +64,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
   btnLogout.addEventListener('click', () => auth.signOut());
 
-  // --- Reset Handler ---
-  if (btnReset) {
-    btnReset.addEventListener('click', () => {
-      console.log('🔄 Reset clicked; currentUser =', currentUser);
-      if (!currentUser) {
+  btnReset.addEventListener('click', () => {
+    if (!currentUser) {
+      // just clear UI for guests
+      resetCoefficients();
+      clearHbInputs();
+      clearDataInputs();
+      showOnly(dataSection);
+      return;
+    }
+    db.collection('formulas').doc(currentUser.uid).delete()
+      .then(() => {
         resetCoefficients();
         clearHbInputs();
         clearDataInputs();
+        alert('Your saved formula has been reset.');
         showOnly(dataSection);
-        return;
-      }
-      db.collection('formulas').doc(currentUser.uid).delete()
-        .then(() => {
-          console.log('🗑️ Firestore doc deleted');
-          resetCoefficients();
-          clearHbInputs();
-          clearDataInputs();
-          alert('Your saved formula has been reset.');
-          showOnly(dataSection);
-        })
-        .catch(err => {
-          console.error('❌ Reset failed:', err);
-          alert('Reset failed: ' + err.message);
-        });
-    });
-  } else {
-    console.error('❗ btn-reset not found in DOM');
-  }
+      })
+      .catch(err => alert('Reset failed: ' + err.message));
+  });
 
-  // --- Auth State Changes ---
   auth.onAuthStateChanged(user => {
     currentUser = user;
     resetCoefficients();
@@ -102,14 +92,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (!user) {
       btnLogout.classList.add('hidden');
-      if (btnReset) btnReset.classList.add('hidden');
+      btnReset.classList.add('hidden');
       showOnly(authSection);
       return;
     }
 
     btnLogout.classList.remove('hidden');
-    if (btnReset) btnReset.classList.remove('hidden');
+    btnReset.classList.remove('hidden');
 
+    // fetch fresh from server
     db.collection('formulas').doc(user.uid)
       .get({ source: 'server' })
       .then(doc => {
@@ -121,10 +112,7 @@ document.addEventListener('DOMContentLoaded', () => {
           showOnly(dataSection);
         }
       })
-      .catch(err => {
-        console.error('Error fetching formula:', err);
-        showOnly(dataSection);
-      });
+      .catch(() => showOnly(dataSection));
   });
 
   // --- Generate & Save Formula ---
@@ -145,6 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return alert('Please enter at least two rows of complete data.');
     }
 
+    // compute simple fit
     const n     = hgb.length;
     const mean  = arr => arr.reduce((s,v)=>s+v,0)/n;
     const μH    = mean(hgb), μR = mean(rbc), μC = mean(hct);
