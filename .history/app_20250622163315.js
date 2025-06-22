@@ -16,31 +16,23 @@ document.addEventListener('DOMContentLoaded', () => {
   const db   = firebase.firestore();
 
   let currentUser     = null;
+  // Global storage for your coefficients
   window._coeffRbc    = { a: 0, b: 0 };
   window._coeffHct    = { c: 0, d: 0 };
 
-  // Clear all Hemoglobin inputs
-  function clearHbInputs() {
-    const g = document.getElementById('generic-hgb');
-    const c = document.getElementById('custom-hgb');
-    if (g) g.value = '';
-    if (c) c.value = '';
-  }
-
-  // Reset coefficients to zero
+  // Utility to zero them out
   function resetCoefficients() {
     window._coeffRbc = { a: 0, b: 0 };
     window._coeffHct = { c: 0, d: 0 };
   }
 
-  // Show exactly one of auth/data/custom
+  // Show exactly one section
   function showOnly(section) {
     [authSection, dataSection, customCalc].forEach(s => s.classList.add('hidden'));
     section.classList.remove('hidden');
   }
 
   // --- AUTH FLOW ---
-
   btnSignup.addEventListener('click', () => {
     const email = document.getElementById('auth-email').value;
     const pwd   = document.getElementById('auth-password').value;
@@ -55,51 +47,47 @@ document.addEventListener('DOMContentLoaded', () => {
       .catch(err => alert(err.message));
   });
 
-  btnGuest.addEventListener('click', () => {
-    resetCoefficients();
-    clearHbInputs();
-    showOnly(dataSection);
-  });
-
+  btnGuest.addEventListener('click', () => showOnly(dataSection));
   btnLogout.addEventListener('click', () => auth.signOut());
 
   auth.onAuthStateChanged(user => {
     currentUser = user;
 
-    // Always reset & clear inputs on any auth change
+    // Reset on every sign-in or sign-out
     resetCoefficients();
-    clearHbInputs();
 
     if (!user) {
-      // Signed out
+      // Signed out → hide logout, show login/signup
       btnLogout.classList.add('hidden');
       showOnly(authSection);
       return;
     }
 
-    // Signed in
+    // Signed in → show logout
     btnLogout.classList.remove('hidden');
 
-    // Fetch saved formula from SERVER (no cache)
+    // Fetch the user’s formula from the SERVER (avoid local caching)
     db.collection('formulas').doc(user.uid)
       .get({ source: 'server' })
       .then(doc => {
         if (doc.exists) {
+          // Load into globals
           Object.assign(window._coeffRbc, doc.data().coeffRbc);
           Object.assign(window._coeffHct, doc.data().coeffHct);
+          // Jump straight to custom converter
           showOnly(customCalc);
         } else {
+          // No saved formula yet → show data-entry
           showOnly(dataSection);
         }
       })
       .catch(err => {
-        console.error('Error fetching formula:', err);
+        console.error('Error fetching formula from server:', err);
         showOnly(dataSection);
       });
   });
 
   // --- GENERATE & SAVE FORMULA ---
-
   btnGenerate.addEventListener('click', () => {
     const rows = document.querySelectorAll('#data-section tbody tr');
     const hgb = [], rbc = [], hct = [], mcv = [];
@@ -117,19 +105,19 @@ document.addEventListener('DOMContentLoaded', () => {
       return alert('Please enter at least two rows of complete data.');
     }
 
-    // Compute linear fit (fold MCV into intercept)
-    const n    = hgb.length;
-    const mean = arr => arr.reduce((s,v)=>s+v,0)/n;
-    const μH   = mean(hgb), μR = mean(rbc), μC = mean(hct);
-    const cov  = (x,y) => x.reduce((s,v,i)=>s + (v-μH)*(y[i]-mean(y)),0)/n;
-    const varH = cov(hgb,hgb);
+    // Compute simple linear fit
+    const n     = hgb.length;
+    const mean  = arr => arr.reduce((s,v)=>s+v,0)/n;
+    const μH    = mean(hgb), μR = mean(rbc), μC = mean(hct);
+    const cov   = (x,y) => x.reduce((s,v,i)=>s+(v-μH)*(y[i]-mean(y)),0)/n;
+    const varH  = cov(hgb,hgb);
 
     window._coeffRbc.a = cov(hgb,rbc)/varH;
     window._coeffRbc.b = μR - window._coeffRbc.a * μH;
     window._coeffHct.c = cov(hgb,hct)/varH;
     window._coeffHct.d = μC - window._coeffHct.c * μH;
 
-    // Save if signed in
+    // Save to Firestore if signed in
     if (currentUser) {
       db.collection('formulas').doc(currentUser.uid)
         .set({
@@ -139,7 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
         .catch(err => console.error('Save error:', err));
     }
 
-    clearHbInputs();
+    // Reveal custom converter
     showOnly(customCalc);
   });
 });
