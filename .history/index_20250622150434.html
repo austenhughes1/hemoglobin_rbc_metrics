@@ -25,7 +25,7 @@
     <!-- Always Visible: Generic Quick Converter -->
     <div id="generic-calculator" class="p-4 bg-white shadow rounded">
       <h2 class="text-xl font-semibold mb-2">Quick Converter</h2>
-      <p><small><i>Uses a generic formula to estimate RBC and Hematocrit from Hemoglobin (finger-prick)</i></small></p>
+      <p><small><i>Uses a generic formula to estimate RBC and Hematocrit from Hemoglobin (as taken from finger prick monitor)</i></small></p>
       <br>
       <div class="flex space-x-2 mb-2">
         <input
@@ -36,7 +36,6 @@
           class="border p-2 rounded flex-1"
         />
         <button
-          type="button"
           id="generic-btn"
           class="bg-blue-600 text-white px-4 py-2 rounded"
         >Calculate</button>
@@ -44,28 +43,25 @@
       <div id="generic-result" class="text-gray-700"></div>
     </div>
 
-    <!-- Authentication Section -->
+    <!-- Authentication Section (now visible by default) -->
     <div id="auth-section" class="p-4 bg-white shadow rounded">
       <h2 class="text-xl font-semibold mb-4">Custom Conversion</h2>
       <p>Provide your historical CBC data for more accurate conversion</p>
-      <p><small><i>Log in or sign up to save your personal formula</i></small></p>
+      <p><small><i>Login in or Sign up for the converter to save your personal conversion formula and data</small></i></p>
       <br>
       <input id="auth-email" type="email" placeholder="Email"
              class="border p-2 rounded w-full mb-2" />
       <input id="auth-password" type="password" placeholder="Password"
              class="border p-2 rounded w-full mb-4" />
       <div class="flex space-x-2">
-        <button
-          type="button"
-          id="btn-login"
-          class="bg-green-600 text-white px-4 py-2 rounded flex-1"
-        >Login</button>
-        <button
-          type="button"
-          id="btn-signup"
-          class="bg-yellow-600 text-white px-4 py-2 rounded flex-1"
-        >Sign Up</button>
+        <button id="btn-login"
+                class="bg-green-600 text-white px-4 py-2 rounded flex-1">Login</button>
+        <button id="btn-signup"
+                class="bg-yellow-600 text-white px-4 py-2 rounded flex-1">Sign Up</button>
       </div>
+      <button id="btn-guest" class="mt-4 text-blue-600 underline">
+        Continue as Guest
+      </button>
     </div>
 
     <!-- Data Entry Section (in app.js) -->
@@ -84,11 +80,10 @@
         </thead>
         <tbody id="data-tbody"></tbody>
       </table>
-      <button
-        type="button"
-        id="btn-generate"
-        class="bg-indigo-600 text-white px-4 py-2 rounded"
-      >Generate My Formula</button>
+      <button id="btn-generate"
+              class="bg-indigo-600 text-white px-4 py-2 rounded">
+        Generate My Formula
+      </button>
     </div>
 
     <!-- Formula Display Section (in app.js) -->
@@ -98,11 +93,10 @@
       </h2>
       <p>RBC = <span id="coef-rbc-a"></span> × Hgb + <span id="coef-rbc-b"></span></p>
       <p>Hct = <span id="coef-hct-c"></span> × Hgb + <span id="coef-hct-d"></span></p>
-      <button
-        type="button"
-        id="btn-save"
-        class="mt-4 bg-green-600 text-white px-4 py-2 rounded"
-      >Save Formula</button>
+      <button id="btn-save"
+              class="mt-4 bg-green-600 text-white px-4 py-2 rounded">
+        Save Formula
+      </button>
     </div>
 
     <!-- Prediction Section (in app.js) -->
@@ -115,11 +109,10 @@
              step="0.1"
              placeholder="Hemoglobin (g/dL)"
              class="border p-2 rounded w-full mb-2" />
-      <button
-        type="button"
-        id="btn-predict"
-        class="bg-blue-600 text-white px-4 py-2 rounded w-full"
-      >Predict</button>
+      <button id="btn-predict"
+              class="bg-blue-600 text-white px-4 py-2 rounded w-full">
+        Predict
+      </button>
       <p id="prediction-result" class="mt-3 text-gray-700 font-medium"></p>
     </div>
 
